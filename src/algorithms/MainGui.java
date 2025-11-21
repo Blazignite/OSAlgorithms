@@ -1,29 +1,30 @@
 package algorithms; 
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import javax.swing.border.EmptyBorder; // For padding
+import javax.swing.border.EmptyBorder;
 
 public class MainGui {
     private JFrame frame;
     private JLabel footerLabel;
 
-    // --- NEW: Panels for CardLayout ---
-    private JPanel cardContainer; // The main panel that holds the "cards"
-    private CardLayout cardLayout; // The layout manager that swaps panels
+    // Panels for CardLayout
+    private JPanel cardContainer;
+    private CardLayout cardLayout; 
     
-    // --- Card 1: Home Screen ---
+    // Card 1: Home Screen
     private JPanel homePanel;
     private JButton btnPreemptivePriority;
     private JButton btnRoundRobin;
     private JButton btnCircularScan;
     
-    // --- Card 2: Results Screen ---
+    // Card 2: Results Screen (We keep this strictly for background logging now)
     private JPanel resultsPanel;
     private JTextArea outputArea;
     private JScrollPane scrollPane;
-    private JButton btnBack; // Button to return to home screen
+    private JButton btnBack; 
 
     // Algorithm objects
     private OperatingSystemAlgorithm priorityAlg;
@@ -44,42 +45,34 @@ public class MainGui {
     }
     
     public MainGui() {
-        // Create algorithm objects
         priorityAlg = new PreemptivePriority();
         rrAlg = new RoundRobin();
         cscanAlg = new CircularScan();
-        
-        // Build the GUI
         initialize();
     }
     
     private void initialize() {
-        
-        // --- 1. SET UP THE MAIN WINDOW (JFrame) ---
+        // --- 1. MAIN FRAME ---
         frame = new JFrame();
         frame.setTitle("OS Algorithm Showcase");
         frame.setBounds(100, 100, 800, 600);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
-        frame.setLayout(new BorderLayout()); // Main layout
+        frame.setLayout(new BorderLayout()); 
         frame.setLocationRelativeTo(null); 
 
-        // --- 2. SET UP THE CARD CONTAINER ---
+        // --- 2. CARD CONTAINER ---
         cardLayout = new CardLayout();
         cardContainer = new JPanel(cardLayout);
         
-        // --- 3. CREATE Card 1: Home Panel ---
+        // --- 3. HOME PANEL ---
         homePanel = new JPanel();
-        // Use BoxLayout for a vertical stack
         homePanel.setLayout(new BoxLayout(homePanel, BoxLayout.Y_AXIS));
-        // Add padding around the whole panel
         homePanel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        // Add "Welcome" title
         JLabel titleLabel = new JLabel("Welcome to the Operating System Algorithm Simulator");
         titleLabel.setFont(new Font("SansSerif", Font.BOLD, 22));
-        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT); // Center it
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Add description labels
         JLabel descLabel1 = new JLabel("This app aims to simulate and calculate the values of Preemptive Priority, Round Robin,");
         descLabel1.setFont(new Font("SansSerif", Font.PLAIN, 14));
         descLabel1.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -96,12 +89,11 @@ public class MainGui {
         descLabel4.setFont(new Font("SansSerif", Font.PLAIN, 14));
         descLabel4.setAlignmentX(Component.CENTER_ALIGNMENT);
         
-        // Create buttons
-        Dimension buttonSize = new Dimension(350, 40); // Set a fixed size
+        Dimension buttonSize = new Dimension(350, 40);
         
         btnPreemptivePriority = new JButton("Preemptive Priority");
-        btnPreemptivePriority.setAlignmentX(Component.CENTER_ALIGNMENT); // Center it
-        btnPreemptivePriority.setMaximumSize(buttonSize); // Apply fixed size
+        btnPreemptivePriority.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btnPreemptivePriority.setMaximumSize(buttonSize);
         
         btnRoundRobin = new JButton("Round Robin");
         btnRoundRobin.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -111,10 +103,9 @@ public class MainGui {
         btnCircularScan.setAlignmentX(Component.CENTER_ALIGNMENT);
         btnCircularScan.setMaximumSize(buttonSize);
 
-        // Add components to homePanel, with spacing
-        homePanel.add(Box.createVerticalGlue()); // Push content to vertical center
+        homePanel.add(Box.createVerticalGlue()); 
         homePanel.add(titleLabel);
-        homePanel.add(Box.createRigidArea(new Dimension(0, 25))); // 25px space
+        homePanel.add(Box.createRigidArea(new Dimension(0, 25)));
         homePanel.add(descLabel1);
         homePanel.add(descLabel2);
         homePanel.add(Box.createRigidArea(new Dimension(0, 10)));
@@ -124,40 +115,39 @@ public class MainGui {
         homePanel.add(Box.createRigidArea(new Dimension(0, 25)));
         
         homePanel.add(btnPreemptivePriority);
-        homePanel.add(Box.createRigidArea(new Dimension(0, 10))); // 10px space
+        homePanel.add(Box.createRigidArea(new Dimension(0, 10))); 
         homePanel.add(btnRoundRobin);
         homePanel.add(Box.createRigidArea(new Dimension(0, 10)));
         homePanel.add(btnCircularScan);
-        homePanel.add(Box.createVerticalGlue()); // Push content to vertical center
+        homePanel.add(Box.createVerticalGlue()); 
 
-        // --- 4. CREATE Card 2: Results Panel ---
-        resultsPanel = new JPanel(new BorderLayout(10, 10)); // Use BorderLayout
-        resultsPanel.setBorder(new EmptyBorder(10, 10, 10, 10)); // Add padding
+        // --- 4. RESULTS PANEL ---
+        resultsPanel = new JPanel(new BorderLayout(10, 10)); 
+        resultsPanel.setBorder(new EmptyBorder(10, 10, 10, 10)); 
 
         outputArea = new JTextArea();
         outputArea.setFont(new Font("Monospaced", Font.PLAIN, 14)); 
         outputArea.setEditable(false); 
         scrollPane = new JScrollPane(outputArea);
-        resultsPanel.add(scrollPane, BorderLayout.CENTER); // Text area in the middle
+        resultsPanel.add(scrollPane, BorderLayout.CENTER); 
         
         btnBack = new JButton("Back to Home");
-        resultsPanel.add(btnBack, BorderLayout.SOUTH); // "Back" button at the bottom
+        resultsPanel.add(btnBack, BorderLayout.SOUTH); 
         
-        // --- 5. ADD CARDS to CardContainer ---
-        cardContainer.add(homePanel, "HOME");    // Add home panel with name "HOME"
-        cardContainer.add(resultsPanel, "RESULTS"); // Add results panel with name "RESULTS"
+        // --- 5. ADD CARDS ---
+        cardContainer.add(homePanel, "HOME");    
+        cardContainer.add(resultsPanel, "RESULTS"); 
         
-        // --- 6. SET UP THE FOOTER ---
+        // --- 6. FOOTER ---
         footerLabel = new JLabel("Laraze, Santos, Teodoro | 3ITC", SwingConstants.CENTER);
         footerLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         
-        // --- 7. ADD Main Panels to Frame ---
-        frame.add(cardContainer, BorderLayout.CENTER); // Card swapper in the middle
-        frame.add(footerLabel, BorderLayout.SOUTH);   // Footer at the bottom
+        // --- 7. ADD TO FRAME ---
+        frame.add(cardContainer, BorderLayout.CENTER); 
+        frame.add(footerLabel, BorderLayout.SOUTH);    
         
-        // --- 8. HOOK UP ALL BUTTONS ---
+        // --- 8. LISTENERS ---
         
-        // Home Panel Buttons
         btnPreemptivePriority.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 runAlgorithm(priorityAlg);
@@ -176,10 +166,8 @@ public class MainGui {
             }
         });
         
-        // Results Panel "Back" Button
         btnBack.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                // Show the "HOME" card
                 cardLayout.show(cardContainer, "HOME");
             }
         });
@@ -189,7 +177,7 @@ public class MainGui {
     private void runAlgorithm(OperatingSystemAlgorithm alg) {
         String instructions = alg.getInstructions();
         int choice = JOptionPane.showConfirmDialog(
-            frame,                       
+            frame,                        
             instructions,                
             "Algorithm Confirmation",    
             JOptionPane.YES_NO_OPTION,   
@@ -197,14 +185,11 @@ public class MainGui {
         );
         
         if (choice == JOptionPane.YES_OPTION) {
-            // 1. Run the algorithm (it will fill outputArea)
+            // 1. Run the algorithm (We still pass outputArea, but we don't show it)
             alg.run(outputArea); 
             
-            // 2. SWAP to the "RESULTS" card
-            cardLayout.show(cardContainer, "RESULTS");
-        } else {
-            // User clicked NO, so we just stay on the home screen.
-            // No need to do anything.
-        }
+            // 2. WE REMOVED THE LINE THAT SWAPS THE CARD.
+            // The user stays on "HOME", and the Algorithm class will pop up its own window.
+        } 
     }
 }
