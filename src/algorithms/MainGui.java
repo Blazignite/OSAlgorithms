@@ -7,177 +7,163 @@ import java.awt.event.ActionListener;
 import javax.swing.border.EmptyBorder;
 
 public class MainGui {
-    private JFrame frame;
-    private JLabel footerLabel;
+    private JFrame mainFrame;
 
-    // Panels for CardLayout
     private JPanel cardContainer;
-    private CardLayout cardLayout; 
+    private CardLayout card1; 
     
-    // Card 1: Home Screen
     private JPanel homePanel;
-    private JButton btnPreemptivePriority;
-    private JButton btnRoundRobin;
-    private JButton btnCircularScan;
+    private JButton btnPP;
+    private JButton btnRR;
+    private JButton btnCS;
     
-    // Card 2: Results Screen (We keep this strictly for background logging now)
     private JPanel resultsPanel;
-    private JTextArea outputArea;
-    private JScrollPane scrollPane;
+    private JTextArea resArea;
+    private JScrollPane resScroll;
     private JButton btnBack; 
+    
+    //labels
+    private JLabel groupLabel;
+    private JLabel titleLabel;
+    private JLabel dl1;
+    private JLabel dl2;
+    private JLabel dl3;
+    private JLabel dl4;
 
-    // Algorithm objects
-    private OperatingSystemAlgorithm priorityAlg;
-    private OperatingSystemAlgorithm rrAlg;
-    private OperatingSystemAlgorithm cscanAlg;
+    private OperatingSystemAlgorithm santosPrioAlgo;
+    private OperatingSystemAlgorithm teodoroRRAlgo;
+    private OperatingSystemAlgorithm larazeCSAlgo;
     
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                try {
-                    MainGui window = new MainGui();
-                    window.frame.setVisible(true);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
+        MainGui mainGui = new MainGui();
+        mainGui.mainFrame.setVisible(true);        
     }
     
     public MainGui() {
-        priorityAlg = new PreemptivePriority();
-        rrAlg = new RoundRobin();
-        cscanAlg = new CircularScan();
-        initialize();
+        santosPrioAlgo = new PreemptivePriority();
+        teodoroRRAlgo = new RoundRobin();
+        larazeCSAlgo = new CircularScan();
+        startApp();
     }
     
-    private void initialize() {
+    private void startApp() {
         // --- 1. MAIN FRAME ---
-        frame = new JFrame();
-        frame.setTitle("OS Algorithm Showcase");
-        frame.setBounds(100, 100, 800, 600);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
-        frame.setLayout(new BorderLayout()); 
-        frame.setLocationRelativeTo(null); 
+        mainFrame = new JFrame("Santos, Teodoro, Laraze OS Algorithms Final Project");
+        mainFrame.setBounds(100, 100, 800, 600);
+        mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
+        mainFrame.setLayout(new BorderLayout()); 
+        mainFrame.setLocationRelativeTo(null); 
 
-        // --- 2. CARD CONTAINER ---
-        cardLayout = new CardLayout();
-        cardContainer = new JPanel(cardLayout);
+        card1 = new CardLayout();
+        cardContainer = new JPanel(card1);
         
-        // --- 3. HOME PANEL ---
         homePanel = new JPanel();
         homePanel.setLayout(new BoxLayout(homePanel, BoxLayout.Y_AXIS));
         homePanel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        JLabel titleLabel = new JLabel("Welcome to the Operating System Algorithm Simulator");
+        titleLabel = new JLabel("Welcome to the Operating System ALgorithm Simulator!");
         titleLabel.setFont(new Font("SansSerif", Font.BOLD, 22));
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JLabel descLabel1 = new JLabel("This app aims to simulate and calculate the values of Preemptive Priority, Round Robin,");
-        descLabel1.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        descLabel1.setAlignmentX(Component.CENTER_ALIGNMENT);
+        dl1 = new JLabel("This apps calculates the value for Preemptive Priority, Round Robin,");
+        dl1.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        dl1.setAlignmentX(Component.CENTER_ALIGNMENT);
         
-        JLabel descLabel2 = new JLabel("and C Scan to demonstrate how it works.");
-        descLabel2.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        descLabel2.setAlignmentX(Component.CENTER_ALIGNMENT);
+        dl2 = new JLabel("and C Scan to demonstrate how it works by showing the table and the chart.");
+        dl2.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        dl2.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JLabel descLabel3 = new JLabel("You will simply provide the values and the application will simulate it for you!");
-        descLabel3.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        descLabel3.setAlignmentX(Component.CENTER_ALIGNMENT);
+        dl3 = new JLabel("You should provide the required values and the app will simulate it foor you!");
+        dl3.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        dl3.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JLabel descLabel4 = new JLabel("To get started, please select an Operating System Algorithm below.");
-        descLabel4.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        descLabel4.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JLabel dl4 = new JLabel("Please select an algorithm below.");
+        dl4.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        dl4.setAlignmentX(Component.CENTER_ALIGNMENT);
         
         Dimension buttonSize = new Dimension(350, 40);
         
-        btnPreemptivePriority = new JButton("Preemptive Priority");
-        btnPreemptivePriority.setAlignmentX(Component.CENTER_ALIGNMENT);
-        btnPreemptivePriority.setMaximumSize(buttonSize);
+        btnPP = new JButton("Preemptive Priority");
+        btnPP.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btnPP.setMaximumSize(buttonSize);
         
-        btnRoundRobin = new JButton("Round Robin");
-        btnRoundRobin.setAlignmentX(Component.CENTER_ALIGNMENT);
-        btnRoundRobin.setMaximumSize(buttonSize);
+        btnRR = new JButton("Round Robin");
+        btnRR.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btnRR.setMaximumSize(buttonSize);
 
-        btnCircularScan = new JButton("Circular Scan");
-        btnCircularScan.setAlignmentX(Component.CENTER_ALIGNMENT);
-        btnCircularScan.setMaximumSize(buttonSize);
+        btnCS = new JButton("Circular Scan");
+        btnCS.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btnCS.setMaximumSize(buttonSize);
 
         homePanel.add(Box.createVerticalGlue()); 
         homePanel.add(titleLabel);
         homePanel.add(Box.createRigidArea(new Dimension(0, 25)));
-        homePanel.add(descLabel1);
-        homePanel.add(descLabel2);
+        homePanel.add(dl1);
+        homePanel.add(dl2);
         homePanel.add(Box.createRigidArea(new Dimension(0, 10)));
-        homePanel.add(descLabel3);
+        homePanel.add(dl3);
         homePanel.add(Box.createRigidArea(new Dimension(0, 25)));
-        homePanel.add(descLabel4);
+        homePanel.add(dl4);
         homePanel.add(Box.createRigidArea(new Dimension(0, 25)));
         
-        homePanel.add(btnPreemptivePriority);
+        homePanel.add(btnPP);
         homePanel.add(Box.createRigidArea(new Dimension(0, 10))); 
-        homePanel.add(btnRoundRobin);
+        homePanel.add(btnRR);
         homePanel.add(Box.createRigidArea(new Dimension(0, 10)));
-        homePanel.add(btnCircularScan);
+        homePanel.add(btnCS);
         homePanel.add(Box.createVerticalGlue()); 
 
-        // --- 4. RESULTS PANEL ---
         resultsPanel = new JPanel(new BorderLayout(10, 10)); 
         resultsPanel.setBorder(new EmptyBorder(10, 10, 10, 10)); 
 
-        outputArea = new JTextArea();
-        outputArea.setFont(new Font("Monospaced", Font.PLAIN, 14)); 
-        outputArea.setEditable(false); 
-        scrollPane = new JScrollPane(outputArea);
-        resultsPanel.add(scrollPane, BorderLayout.CENTER); 
+        resArea = new JTextArea();
+        resArea.setFont(new Font("Monospaced", Font.PLAIN, 14)); 
+        resArea.setEditable(false); 
+        resScroll = new JScrollPane(resArea);
+        resultsPanel.add(resScroll, BorderLayout.CENTER); 
         
         btnBack = new JButton("Back to Home");
         resultsPanel.add(btnBack, BorderLayout.SOUTH); 
         
-        // --- 5. ADD CARDS ---
         cardContainer.add(homePanel, "HOME");    
         cardContainer.add(resultsPanel, "RESULTS"); 
         
-        // --- 6. FOOTER ---
-        footerLabel = new JLabel("Laraze, Santos, Teodoro | 3ITC", SwingConstants.CENTER);
-        footerLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        groupLabel = new JLabel("Laraze, Santos, Teodoro | 3ITC", SwingConstants.CENTER);
+        groupLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         
-        // --- 7. ADD TO FRAME ---
-        frame.add(cardContainer, BorderLayout.CENTER); 
-        frame.add(footerLabel, BorderLayout.SOUTH);    
+        //ADD TO FRAME
+        mainFrame.add(cardContainer, BorderLayout.CENTER); 
+        mainFrame.add(groupLabel, BorderLayout.SOUTH);    
         
-        // --- 8. LISTENERS ---
-        
-        btnPreemptivePriority.addActionListener(new ActionListener() {
+        btnPP.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                runAlgorithm(priorityAlg);
+                runAlgorithm(santosPrioAlgo);
             }
         });
         
-        btnRoundRobin.addActionListener(new ActionListener() {
+        btnRR.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                runAlgorithm(rrAlg);
+                runAlgorithm(teodoroRRAlgo);
             }
         });
         
-        btnCircularScan.addActionListener(new ActionListener() {
+        btnCS.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                runAlgorithm(cscanAlg);
+                runAlgorithm(larazeCSAlgo);
             }
         });
         
         btnBack.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                cardLayout.show(cardContainer, "HOME");
+                card1.show(cardContainer, "HOME");
             }
         });
     }
 
-    // --- MODIFIED runAlgorithm Method ---
     private void runAlgorithm(OperatingSystemAlgorithm alg) {
         String instructions = alg.getInstructions();
         int choice = JOptionPane.showConfirmDialog(
-            frame,                        
+            mainFrame,                        
             instructions,                
             "Algorithm Confirmation",    
             JOptionPane.YES_NO_OPTION,   
@@ -185,11 +171,8 @@ public class MainGui {
         );
         
         if (choice == JOptionPane.YES_OPTION) {
-            // 1. Run the algorithm (We still pass outputArea, but we don't show it)
-            alg.run(outputArea); 
+            alg.run(resArea); 
             
-            // 2. WE REMOVED THE LINE THAT SWAPS THE CARD.
-            // The user stays on "HOME", and the Algorithm class will pop up its own window.
         } 
     }
 }

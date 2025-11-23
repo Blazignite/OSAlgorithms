@@ -1,7 +1,7 @@
 package algorithms;
 
 import javax.swing.*;
-import javax.swing.border.EmptyBorder; // <--- ADDED THIS IMPORT
+import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.text.NumberFormatter;
 import java.awt.*;
@@ -18,40 +18,6 @@ import java.util.List;
 // Santos
 public class PreemptivePriority implements OperatingSystemAlgorithm {
 
-    // --- INNER CLASS: PROCESS ---
-    private class Process {
-        int pid;
-        int arrivalTime;
-        int burstTime;
-        int priority;
-        int completedTime;
-        int turnAroundTime;
-        int waitingTime;
-        int remainingBurstTime;
-        boolean isComplete = false;
-
-        public Process(int pid, int arrivalTime, int burstTime, int priority) {
-            this.pid = pid;
-            this.arrivalTime = arrivalTime;
-            this.burstTime = burstTime;
-            this.priority = priority;
-            this.remainingBurstTime = burstTime;
-        }
-    }
-
-    // --- INNER CLASS: GANTT RECORD ---
-    private class GanttRecord {
-        int pid;
-        int startTime;
-        int endTime;
-
-        public GanttRecord(int pid, int startTime, int endTime) {
-            this.pid = pid;
-            this.startTime = startTime;
-            this.endTime = endTime;
-        }
-    }
-
     @Override
     public String getInstructions() {
         return "<html>"
@@ -65,7 +31,6 @@ public class PreemptivePriority implements OperatingSystemAlgorithm {
 
     @Override
     public void run(JTextArea outputArea) {
-        // --- 1. GET NUMBER OF PROCESSES ---
         String numStr = JOptionPane.showInputDialog(null, "Enter number of processes:", "Preemptive Priority", JOptionPane.QUESTION_MESSAGE);
         int n;
 
@@ -81,7 +46,7 @@ public class PreemptivePriority implements OperatingSystemAlgorithm {
             return;
         }
 
-        // --- 2. SETUP INPUT TABLE ---
+        // --- SETUP INPUT TABLE ---
         String[] columnNames = {"Process ID", "Arrival Time", "Burst Time", "Priority"};
         Object[][] data = new Object[n][4];
         for (int i = 0; i < n; i++) data[i][0] = "P" + (i + 1);
@@ -104,7 +69,7 @@ public class PreemptivePriority implements OperatingSystemAlgorithm {
         table.getColumnModel().getColumn(2).setCellEditor(new IntegerInputCellEditor(intFormatter));
         table.getColumnModel().getColumn(3).setCellEditor(new IntegerInputCellEditor(intFormatter));
 
-        // --- 3. SHOW INPUT DIALOG ---
+        // --- SHOW INPUT DIALOG ---
         JDialog dialog = new JDialog();
         dialog.setTitle("Input Data");
         dialog.setModal(true);
@@ -121,7 +86,7 @@ public class PreemptivePriority implements OperatingSystemAlgorithm {
             public void actionPerformed(ActionEvent e) {
                 if (table.isEditing()) table.getCellEditor().stopCellEditing();
 
-                Process[] processes = new Process[n];
+                PPProcess[] processes = new PPProcess[n]; 
                 try {
                     for (int i = 0; i < n; i++) {
                         Object atObj = model.getValueAt(i, 1);
@@ -134,15 +99,15 @@ public class PreemptivePriority implements OperatingSystemAlgorithm {
                         int bt = Integer.parseInt(btObj.toString());
                         int pr = Integer.parseInt(prObj.toString());
 
-                        processes[i] = new Process(i + 1, at, bt, pr);
+                        processes[i] = new PPProcess(i + 1, at, bt, pr);
                     }
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(dialog, "Please fill all fields with valid numbers.", "Error", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
 
-                // A. RUN ALGORITHM
-                List<GanttRecord> history = runAlgorithmLogic(processes);
+                // A. RUN ALGORITHM (Using PPGanttChart)
+                List<PPGanttChart> history = runAlgorithmLogic(processes);
 
                 // B. SORT PROCESSES BY PID FOR DISPLAY
                 Arrays.sort(processes, Comparator.comparingInt(p -> p.pid));
@@ -160,8 +125,9 @@ public class PreemptivePriority implements OperatingSystemAlgorithm {
     }
 
     // --- LOGIC ---
-    private List<GanttRecord> runAlgorithmLogic(Process[] processes) {
-        List<GanttRecord> history = new ArrayList<>();
+    // UPDATE: List<GanttRecord> -> List<PPGanttChart>
+    private List<PPGanttChart> runAlgorithmLogic(PPProcess[] processes) {
+        List<PPGanttChart> history = new ArrayList<>();
         int n = processes.length;
         int currentTime = 0;
         int completed = 0;
@@ -169,8 +135,8 @@ public class PreemptivePriority implements OperatingSystemAlgorithm {
         int startBlock = 0;
 
         while (completed < n) {
-            Process best = null;
-            for (Process p : processes) {
+            PPProcess best = null;
+            for (PPProcess p : processes) {
                 if (p.arrivalTime <= currentTime && !p.isComplete) {
                     if (best == null) best = p;
                     else if (p.priority < best.priority) best = p;
@@ -182,7 +148,8 @@ public class PreemptivePriority implements OperatingSystemAlgorithm {
 
             if (nextPid != currentPid) {
                 if (currentTime > 0) {
-                    history.add(new GanttRecord(currentPid, startBlock, currentTime));
+                    // UPDATE: new GanttRecord -> new PPGanttChart
+                    history.add(new PPGanttChart(currentPid, startBlock, currentTime));
                 }
                 currentPid = nextPid;
                 startBlock = currentTime;
@@ -202,16 +169,18 @@ public class PreemptivePriority implements OperatingSystemAlgorithm {
                 }
             }
         }
-        history.add(new GanttRecord(currentPid, startBlock, currentTime));
+        // UPDATE: new GanttRecord -> new PPGanttChart
+        history.add(new PPGanttChart(currentPid, startBlock, currentTime));
         return history;
     }
 
     // =======================================================================
-    // === DASHBOARD WINDOW WITH BACK BUTTON ===
+    // === DASHBOARD WINDOW ===
     // =======================================================================
-    private void showDashboardWindow(List<GanttRecord> history, Process[] processes) {
+    // UPDATE: List<GanttRecord> -> List<PPGanttChart>
+    private void showDashboardWindow(List<PPGanttChart> history, PPProcess[] processes) {
         JFrame frame = new JFrame("Calculation Results & Gantt Chart");
-        frame.setSize(900, 650); // Made slightly taller for the button
+        frame.setSize(900, 650); 
         frame.setLocationRelativeTo(null);
         frame.setAlwaysOnTop(true);
         frame.setLayout(new BorderLayout());
@@ -224,7 +193,7 @@ public class PreemptivePriority implements OperatingSystemAlgorithm {
         double totalWT = 0;
 
         for (int i = 0; i < processes.length; i++) {
-            Process p = processes[i];
+            PPProcess p = processes[i];
             data[i][0] = "P" + p.pid;
             data[i][1] = p.arrivalTime;
             data[i][2] = p.burstTime;
@@ -255,7 +224,7 @@ public class PreemptivePriority implements OperatingSystemAlgorithm {
         
         // --- 3. BOTTOM: AVERAGES & BACK BUTTON ---
         JPanel footerPanel = new JPanel();
-        footerPanel.setLayout(new BoxLayout(footerPanel, BoxLayout.Y_AXIS)); // Stack vertically
+        footerPanel.setLayout(new BoxLayout(footerPanel, BoxLayout.Y_AXIS)); 
         footerPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
         footerPanel.setBackground(new Color(240, 240, 240));
 
@@ -278,7 +247,7 @@ public class PreemptivePriority implements OperatingSystemAlgorithm {
         JButton btnBack = new JButton("Back to Home");
         btnBack.setFont(new Font("SansSerif", Font.BOLD, 14));
         btnBack.setAlignmentX(Component.CENTER_ALIGNMENT);
-        btnBack.addActionListener(e -> frame.dispose()); // Closes this window
+        btnBack.addActionListener(e -> frame.dispose()); 
 
         // Add to footer
         footerPanel.add(labelsPanel);
@@ -295,10 +264,11 @@ public class PreemptivePriority implements OperatingSystemAlgorithm {
 
     // --- GANTT CHART PANEL ---
     class GanttChartPanel extends JPanel {
-        List<GanttRecord> history;
+        // UPDATE: List<GanttRecord> -> List<PPGanttChart>
+        List<PPGanttChart> history;
         int totalTime;
 
-        public GanttChartPanel(List<GanttRecord> history) {
+        public GanttChartPanel(List<PPGanttChart> history) {
             this.history = history;
             this.totalTime = history.isEmpty() ? 1 : history.get(history.size() - 1).endTime;
             this.setBackground(Color.WHITE);
@@ -315,7 +285,8 @@ public class PreemptivePriority implements OperatingSystemAlgorithm {
             int x = 30;
             int y = getHeight() / 2 - 25; 
 
-            for (GanttRecord r : history) {
+            // UPDATE: Loop uses PPGanttChart
+            for (PPGanttChart r : history) {
                 int duration = r.endTime - r.startTime;
                 if (duration <= 0) continue;
 
