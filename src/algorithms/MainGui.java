@@ -172,7 +172,8 @@ public class MainGui {
         
         if (choice == JOptionPane.YES_OPTION) {
             alg.run(resArea); 
-            
+
+            card1.show(cardContainer, "RESULTS");
         } 
     }
 }
