@@ -6,45 +6,20 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.*;
 
-// Teodoro
 public class RoundRobin implements OperatingSystemAlgorithm {
-
-    //Panel to swap for later
-    private JPanel resultsContainer; 
 
     @Override
     public String getInstructions() {
         return "<html><b>Round Robin Scheduling</b><br><br>"
-             + "This is a preemptive algorithm. Each process is given<br>"
-             + "a fixed time slice (Time Quantum) to run.<br><br>"
-             + "<b>Do you want to continue?</b></html>";
+                + "Each process is given a fixed time slice (Time Quantum).<br>"
+                + "<b>Do you want to continue?</b></html>";
     }
 
     @Override
-    public void run(JTextArea outputArea) {
-        //Setup GUI
-        if (resultsContainer == null) {
-            try {
-                Container parent = outputArea.getParent(); // JViewport
-                if (parent != null) {
-                    Container scrollPane = parent.getParent(); // JScrollPane
-                    if (scrollPane != null) {
-                        Container panel = scrollPane.getParent(); // resultsPanel
-                        if (panel instanceof JPanel) {
-                            resultsContainer = (JPanel) panel;
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                System.out.println("Could not find GUI Container");
-            }
-        }
-
-        //Default Text
-        outputArea.setText("--- Running Round Robin ---\nInputting data...");
+    public void run() {
 
         try {
-            //Inputs
+            // Inputs
             String intString = JOptionPane.showInputDialog(null, "Enter Number of Processes: ");
             if (intString == null) return;
             int num = Integer.parseInt(intString.trim());
@@ -52,13 +27,15 @@ public class RoundRobin implements OperatingSystemAlgorithm {
             ArrayList<RRProcess> processes = new ArrayList<>();
             ArrayList<RRGanttChart> ganttChart = new ArrayList<>();
 
-            for (int i = 0; i < num; i++){
-                String pid = "P" + (i+1);
+            for (int i = 0; i < num; i++) {
+                String pid = "P" + (i + 1);
                 String atString = JOptionPane.showInputDialog(null, "Arrival Time of " + pid + ":");
                 String btString = JOptionPane.showInputDialog(null, "Burst Time of " + pid + ":");
                 if (atString == null || btString == null) return;
+
                 int at = Integer.parseInt(atString.trim());
                 int bt = Integer.parseInt(btString.trim());
+
                 processes.add(new RRProcess(pid, at, bt));
             }
 
@@ -66,7 +43,7 @@ public class RoundRobin implements OperatingSystemAlgorithm {
             if (tqString == null) return;
             int tq = Integer.parseInt(tqString.trim());
 
-            //Logic
+            // Logic
             processes.sort(Comparator.comparingInt(p -> p.arrivalTime));
             Queue<RRProcess> queue = new LinkedList<>();
 
@@ -79,13 +56,13 @@ public class RoundRobin implements OperatingSystemAlgorithm {
             }
 
             while (completed < num) {
-                while (index < num && processes.get(index).arrivalTime <= currentTime){
+                while (index < num && processes.get(index).arrivalTime <= currentTime) {
                     queue.add(processes.get(index));
                     index++;
                 }
 
                 if (queue.isEmpty()) {
-                    if (index < num) { 
+                    if (index < num) {
                         int nextTime = processes.get(index).arrivalTime;
                         ganttChart.add(new RRGanttChart("IDLE", currentTime, nextTime));
                         currentTime = nextTime;
@@ -99,7 +76,7 @@ public class RoundRobin implements OperatingSystemAlgorithm {
                 RRProcess p = queue.poll();
                 int start = currentTime;
 
-                if (p.remainingBurstTime > tq){
+                if (p.remainingBurstTime > tq) {
                     p.remainingBurstTime -= tq;
                     currentTime += tq;
                 } else {
@@ -114,48 +91,41 @@ public class RoundRobin implements OperatingSystemAlgorithm {
                 int end = currentTime;
                 ganttChart.add(new RRGanttChart(p.pid, start, end));
 
-                while (index < num && processes.get(index).arrivalTime <= currentTime){
+                while (index < num && processes.get(index).arrivalTime <= currentTime) {
                     queue.add(processes.get(index));
                     index++;
                 }
 
-                if (p.remainingBurstTime > 0){
+                if (p.remainingBurstTime > 0) {
                     queue.add(p);
                 }
             }
 
             processes.sort(Comparator.comparing(p -> Integer.parseInt(p.pid.substring(1))));
-            
-            //Dashboard Panel
-            JPanel dashboard = createDashboardPanel(processes, ganttChart, tq);
-            
-            if (resultsContainer != null) {
-                BorderLayout layout = (BorderLayout) resultsContainer.getLayout();
-                Component center = layout.getLayoutComponent(BorderLayout.CENTER);
-                if (center != null) {
-                    resultsContainer.remove(center);
-                }
-                
-                resultsContainer.add(dashboard, BorderLayout.CENTER);
-                
-                resultsContainer.revalidate();
-                resultsContainer.repaint();
-            } else {
-                outputArea.append("\n[Error] Could not swap to Graphical View.");
-            }
+
+            // Show results in **independent window**
+            showDashboardWindow(processes, ganttChart, tq);
 
         } catch (Exception e) {
-            outputArea.setText("Error: " + e.getMessage());
+            JOptionPane.showMessageDialog(null, "Error: " + e.getMessage());
             e.printStackTrace();
         }
     }
-    //JPanel for the Results
-    private JPanel createDashboardPanel(ArrayList<RRProcess> processes, ArrayList<RRGanttChart> ganttChart, int tq) {
+
+    // Independent JFrame Window (like teammate's)
+    private void showDashboardWindow(ArrayList<RRProcess> processes, ArrayList<RRGanttChart> ganttChart, int tq) {
+
+        JFrame frame = new JFrame("Round Robin Results");
+        frame.setSize(900, 600);
+        frame.setLocationRelativeTo(null);
+        frame.setLayout(new BorderLayout());
+
         JPanel mainPanel = new JPanel(new BorderLayout());
-        
-        //Table
-        String[] columnNames = {"Process ID", "Arrival", "Burst", "Completion", "Turn Around", "Waiting"};
+
+        // Table
+        String[] col = {"Process ID", "Arrival", "Burst", "Completion", "Turn Around", "Waiting"};
         Object[][] data = new Object[processes.size()][6];
+
         double totalTAT = 0;
         double totalWT = 0;
 
@@ -171,66 +141,68 @@ public class RoundRobin implements OperatingSystemAlgorithm {
             totalWT += p.waitingTime;
         }
 
-        DefaultTableModel model = new DefaultTableModel(data, columnNames) {
-            public boolean isCellEditable(int row, int column) { return false; }
-        };
-        JTable table = new JTable(model);
+        JTable table = new JTable(new DefaultTableModel(data, col));
         table.setRowHeight(25);
-        table.getTableHeader().setFont(new Font("SansSerif", Font.BOLD, 12));
-        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
-        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
-        for(int x=0;x<6;x++) table.getColumnModel().getColumn(x).setCellRenderer(centerRenderer);
+        DefaultTableCellRenderer center = new DefaultTableCellRenderer();
+        center.setHorizontalAlignment(JLabel.CENTER);
 
-        JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBorder(BorderFactory.createTitledBorder("Process Table (TQ=" + tq + ")"));
+        for (int i = 0; i < 6; i++) table.getColumnModel().getColumn(i).setCellRenderer(center);
 
-        //Gantt Chart
+        JScrollPane scroll = new JScrollPane(table);
+        scroll.setBorder(BorderFactory.createTitledBorder("Process Table (TQ = " + tq + ")"));
+
+        // Gantt Chart Panel
         JPanel ganttPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
+
                 if (ganttChart.isEmpty()) return;
-                
-                int totalTime = ganttChart.get(ganttChart.size()-1).endTime;
+
+                int totalTime = ganttChart.get(ganttChart.size() - 1).endTime;
                 int width = getWidth() - 40;
-                int startX = 20;
-                int startY = 40;
-                int height = 50;
+                int x = 20;
+                int y = 40;
+                int h = 50;
 
                 for (RRGanttChart entry : ganttChart) {
-                    int duration = entry.endTime - entry.startTime;
-                    int barWidth = (int) ((double)duration / totalTime * width);
-                    int barX = startX + (int) ((double)entry.startTime / totalTime * width);
-                    
-                    if(entry.pid.equals("IDLE")) g.setColor(Color.LIGHT_GRAY);
-                    else g.setColor(Color.CYAN);
-                    
-                    g.fillRect(barX, startY, barWidth, height);
-                    g.setColor(Color.BLACK);
-                    g.drawRect(barX, startY, barWidth, height);
+                    int dur = entry.endTime - entry.startTime;
+                    int barW = (int) ((double) dur / totalTime * width);
+                    int barX = x + (int) ((double) entry.startTime / totalTime * width);
 
-                    if (barWidth > 20) {
-                        g.drawString(entry.pid, barX + (barWidth/2) - 5, startY + 30);
-                    }
-                    g.drawString(String.valueOf(entry.startTime), barX, startY + height + 15);
+                    g.setColor(entry.pid.equals("IDLE") ? Color.LIGHT_GRAY : Color.CYAN);
+                    g.fillRect(barX, y, barW, h);
+                    g.setColor(Color.BLACK);
+                    g.drawRect(barX, y, barW, h);
+
+                    if (barW > 20)
+                        g.drawString(entry.pid, barX + barW / 2 - 5, y + 30);
+
+                    g.drawString(String.valueOf(entry.startTime), barX, y + h + 15);
                 }
-                g.drawString(String.valueOf(totalTime), startX + width, startY + height + 15);
+
+                g.drawString(String.valueOf(totalTime), x + width, y + h + 15);
             }
         };
         ganttPanel.setPreferredSize(new Dimension(800, 150));
         ganttPanel.setBorder(BorderFactory.createTitledBorder("Gantt Chart"));
 
-        // C. Averages
+        // Footer
         JPanel footer = new JPanel(new FlowLayout());
-        JLabel avgLabel = new JLabel(String.format("Avg Turnaround: %.2f  |  Avg Waiting: %.2f", 
-            (totalTAT/processes.size()), (totalWT/processes.size())));
-        avgLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
-        footer.add(avgLabel);
+        JLabel avg = new JLabel(String.format(
+                "Avg Turnaround: %.2f   |   Avg Waiting: %.2f",
+                totalTAT / processes.size(),
+                totalWT / processes.size()
+        ));
+        avg.setFont(new Font("SansSerif", Font.BOLD, 14));
+        footer.add(avg);
 
-        mainPanel.add(scrollPane, BorderLayout.CENTER);
+        // Add to panel
+        mainPanel.add(scroll, BorderLayout.CENTER);
         mainPanel.add(ganttPanel, BorderLayout.SOUTH);
         mainPanel.add(footer, BorderLayout.NORTH);
-        
-        return mainPanel;
+
+        frame.add(mainPanel);
+        frame.setVisible(true);
     }
 }
