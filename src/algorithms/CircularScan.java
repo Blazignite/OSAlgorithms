@@ -13,9 +13,6 @@ public class CircularScan implements OperatingSystemAlgorithm {
     }
 
     @Override
-    public void run(JTextArea outputArea) {
-        outputArea.setText("--- Running C-SCAN ---\n");
-        //logic
-        outputArea.append("--- C-SCAN Finished ---\n");
+    public void run() {
     }
 }

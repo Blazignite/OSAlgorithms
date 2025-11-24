@@ -17,11 +17,6 @@ public class MainGui {
     private JButton btnRR;
     private JButton btnCS;
     
-    private JPanel resultsPanel;
-    private JTextArea resArea;
-    private JScrollPane resScroll;
-    private JButton btnBack; 
-    
     //labels
     private JLabel groupLabel;
     private JLabel titleLabel;
@@ -29,7 +24,16 @@ public class MainGui {
     private JLabel dl2;
     private JLabel dl3;
     private JLabel dl4;
-
+    
+    //design variables
+    private Color buttonBg = Color.WHITE;
+    private Color buttonTxt = new Color(0, 82, 212);
+    private Color txtColor = Color.WHITE;
+    
+    private Font titleFont = new Font("SansSerif", Font.BOLD, 26);
+    private Font descFont = new Font("SansSerif", Font.PLAIN, 14);
+    private Font btnFont = new Font("SansSerif", Font.BOLD, 14);
+    
     private OperatingSystemAlgorithm santosPrioAlgo;
     private OperatingSystemAlgorithm teodoroRRAlgo;
     private OperatingSystemAlgorithm larazeCSAlgo;
@@ -47,7 +51,6 @@ public class MainGui {
     }
     
     private void startApp() {
-        // --- 1. MAIN FRAME ---
         mainFrame = new JFrame("Santos, Teodoro, Laraze OS Algorithms Final Project");
         mainFrame.setBounds(100, 100, 800, 600);
         mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
@@ -57,47 +60,29 @@ public class MainGui {
         card1 = new CardLayout();
         cardContainer = new JPanel(card1);
         
-        homePanel = new JPanel();
+        homePanel = new GradientPanel();
         homePanel.setLayout(new BoxLayout(homePanel, BoxLayout.Y_AXIS));
-        homePanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        homePanel.setBorder(new EmptyBorder(40, 40, 40, 40));
 
-        titleLabel = new JLabel("Welcome to the Operating System ALgorithm Simulator!");
-        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 22));
+        titleLabel = new JLabel("Welcome to the Operating System Algorithm Simulator!");
+        titleLabel.setFont(titleFont);
+        titleLabel.setForeground(txtColor);
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        dl1 = new JLabel("This apps calculates the value for Preemptive Priority, Round Robin,");
-        dl1.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        dl1.setAlignmentX(Component.CENTER_ALIGNMENT);
-        
-        dl2 = new JLabel("and C Scan to demonstrate how it works by showing the table and the chart.");
-        dl2.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        dl2.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-        dl3 = new JLabel("You should provide the required values and the app will simulate it foor you!");
-        dl3.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        dl3.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-        JLabel dl4 = new JLabel("Please select an algorithm below.");
-        dl4.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        dl4.setAlignmentX(Component.CENTER_ALIGNMENT);
+        dl1 = designLabel("This app calculates the value for Preemptive Priority, Round Robin,");
+        dl2 = designLabel("and C Scan to demonstrate how it works by showing the table and the chart.");
+        dl3 = designLabel("You should provide the required values and the app will simulate it for you!");
+        dl4 = designLabel("Please select an algorithm below.");
         
         Dimension buttonSize = new Dimension(350, 40);
         
-        btnPP = new JButton("Preemptive Priority");
-        btnPP.setAlignmentX(Component.CENTER_ALIGNMENT);
-        btnPP.setMaximumSize(buttonSize);
-        
-        btnRR = new JButton("Round Robin");
-        btnRR.setAlignmentX(Component.CENTER_ALIGNMENT);
-        btnRR.setMaximumSize(buttonSize);
-
-        btnCS = new JButton("Circular Scan");
-        btnCS.setAlignmentX(Component.CENTER_ALIGNMENT);
-        btnCS.setMaximumSize(buttonSize);
+        btnPP = designButton("Preemptive Priority", buttonSize);
+        btnRR = designButton("Round Robin", buttonSize);
+        btnCS = designButton("Circular Scan", buttonSize);
 
         homePanel.add(Box.createVerticalGlue()); 
         homePanel.add(titleLabel);
-        homePanel.add(Box.createRigidArea(new Dimension(0, 25)));
+        homePanel.add(Box.createRigidArea(new Dimension(0, 30)));
         homePanel.add(dl1);
         homePanel.add(dl2);
         homePanel.add(Box.createRigidArea(new Dimension(0, 10)));
@@ -112,26 +97,15 @@ public class MainGui {
         homePanel.add(Box.createRigidArea(new Dimension(0, 10)));
         homePanel.add(btnCS);
         homePanel.add(Box.createVerticalGlue()); 
-
-        resultsPanel = new JPanel(new BorderLayout(10, 10)); 
-        resultsPanel.setBorder(new EmptyBorder(10, 10, 10, 10)); 
-
-        resArea = new JTextArea();
-        resArea.setFont(new Font("Monospaced", Font.PLAIN, 14)); 
-        resArea.setEditable(false); 
-        resScroll = new JScrollPane(resArea);
-        resultsPanel.add(resScroll, BorderLayout.CENTER); 
-        
-        btnBack = new JButton("Back to Home");
-        resultsPanel.add(btnBack, BorderLayout.SOUTH); 
-        
         cardContainer.add(homePanel, "HOME");    
-        cardContainer.add(resultsPanel, "RESULTS"); 
         
         groupLabel = new JLabel("Laraze, Santos, Teodoro | 3ITC", SwingConstants.CENTER);
-        groupLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        groupLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        groupLabel.setFont(new Font("SansSerif", Font.ITALIC, 12));
+        groupLabel.setOpaque(true);
+        groupLabel.setBackground(Color.WHITE);
         
-        //ADD TO FRAME
+        //add ti  frame
         mainFrame.add(cardContainer, BorderLayout.CENTER); 
         mainFrame.add(groupLabel, BorderLayout.SOUTH);    
         
@@ -152,12 +126,43 @@ public class MainGui {
                 runAlgorithm(larazeCSAlgo);
             }
         });
-        
-        btnBack.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                card1.show(cardContainer, "HOME");
+    }
+    private JLabel designLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(descFont);
+        label.setForeground(txtColor);
+        label.setAlignmentX(Component.CENTER_ALIGNMENT);
+        return label;
+    }
+    private JButton designButton(String text, Dimension size) {
+        JButton btn = new JButton(text);
+        btn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btn.setMaximumSize(size);
+        btn.setPreferredSize(size);
+        btn.setFont(btnFont);
+        btn.setBackground(buttonBg);
+        btn.setForeground(buttonTxt);
+        btn.setFocusPainted(false); 
+        btn.setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15)); 
+        btn.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btn.setBackground(buttonTxt); 
+                btn.setForeground(Color.WHITE);
+                
+                btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            }
+
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btn.setBackground(buttonBg);
+                btn.setForeground(buttonTxt);
+                
+                btn.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
             }
         });
+        return btn;
+        
     }
 
     private void runAlgorithm(OperatingSystemAlgorithm alg) {
@@ -171,9 +176,11 @@ public class MainGui {
         );
         
         if (choice == JOptionPane.YES_OPTION) {
-            alg.run(resArea); 
+            alg.run(); 
 
             card1.show(cardContainer, "RESULTS");
+         
+
         } 
     }
 }

@@ -7,16 +7,32 @@ import javax.swing.text.NumberFormatter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
 
 // Santos
 public class PreemptivePriority implements OperatingSystemAlgorithm {
+
+    
+    // run method variables
+    private int num;
+    private JDialog inputDialog;
+    private JTable table;
+    private DefaultTableModel tableModel;
+    private JButton submitButton;
+    private JScrollPane scrollPaneInput;
+    private JPanel btnPanel;
+
+    // results window variables
+    private JFrame resultFrame;
+    private JTable resultTable;
+    private DefaultTableModel resultTableModel;
+    private JScrollPane tableScroll;
+    private PPGanttChartPanel ganttPanel;
+    private JPanel footerPanel;
+    private JPanel labelsPanel;
+    private JLabel labelAvgTAT;
+    private JLabel labelAvgWT;
+    private JButton btnBack;
 
     @Override
     public String getInstructions() {
@@ -24,310 +40,317 @@ public class PreemptivePriority implements OperatingSystemAlgorithm {
                 + "<b>Preemptive Priority Scheduling</b><br><br>"
                 + "1. Enter the number of processes.<br>"
                 + "2. Fill in the table (Arrival, Burst, Priority).<br>"
-                + "3. Click 'Submit' to see the <b>Visual Dashboard</b>.<br><br>"
-                + "<b>Do you want to continue?</b>"
+                + "3. The lower the number, the higher the priority (1 is the highest priority)<br>"
+                + "4. Click 'Submit' to see the <b>Result</b>.<br><br>"
+                + "<b>Do you want to continue?</b>"        
                 + "</html>";
     }
 
     @Override
-    public void run(JTextArea outputArea) {
-        String numStr = JOptionPane.showInputDialog(null, "Enter number of processes:", "Preemptive Priority", JOptionPane.QUESTION_MESSAGE);
-        int n;
-
-        if (numStr == null) {
-            return;
-        }
+    public void run() {
+        String numInput = JOptionPane.showInputDialog(null, "Enter number of processes: (e.g. 5)", "Preemptive Priority", JOptionPane.QUESTION_MESSAGE);
+       
+        if (numInput == null) return;
 
         try {
-            n = Integer.parseInt(numStr);
-            if (n <= 0) throw new NumberFormatException();
+            num = Integer.parseInt(numInput);
+            if (num <= 0) {
+                new NumberFormatException(); 
+                return;
+            }
+            if (num > 100) {
+                JOptionPane.showMessageDialog(null, "Too many processes! Please enter a number less than or equal to 100.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
         } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(null, "Please enter a valid positive number.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Please enter a valid positive number. (e.g. 5)", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
+        
+        // table
+        String[] header = {"Process ID", "Arrival Time", "Burst Time", "Priority"};
+        Object[][] tableCells = new Object[num][4];
+        
+        for (int i = 1; i <= num; i++) {
+            tableCells[i-1][0] = "P" + (i);
+        }
 
-        // --- SETUP INPUT TABLE ---
-        String[] columnNames = {"Process ID", "Arrival Time", "Burst Time", "Priority"};
-        Object[][] data = new Object[n][4];
-        for (int i = 0; i < n; i++) data[i][0] = "P" + (i + 1);
-
-        DefaultTableModel model = new DefaultTableModel(data, columnNames) {
+        tableModel = new DefaultTableModel(tableCells, header) {
             @Override
-            public boolean isCellEditable(int row, int col) { return col == 1 || col == 2 || col == 3; }
+            public boolean isCellEditable(int row, int col) {
+                return col == 1 || col == 2 || col == 3; 
+            }
         };
 
-        JTable table = new JTable(model);
+        table = new JTable(tableModel);
         table.setRowHeight(25);
+        table.setSurrendersFocusOnKeystroke(true);
+        table.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
+      
+        table.getColumnModel().getColumn(1).setCellEditor(createIntegerEditor(0));
+        table.getColumnModel().getColumn(2).setCellEditor(createIntegerEditor(1));
+        table.getColumnModel().getColumn(3).setCellEditor(createIntegerEditor(1));
+
+
+        // input to table
+        inputDialog = new JDialog();
+        inputDialog.setTitle("Input positive integer numbers");
+        inputDialog.setModal(true);
+        inputDialog.setLayout(new BorderLayout());
+        inputDialog.add(new JScrollPane(table), BorderLayout.CENTER);
         
-        NumberFormatter intFormatter = new NumberFormatter(NumberFormat.getIntegerInstance());
-        intFormatter.setValueClass(Integer.class);
-        intFormatter.setMinimum(0);
-        intFormatter.setAllowsInvalid(false);
-        ((NumberFormat) intFormatter.getFormat()).setGroupingUsed(false);
+        GradientPanel dialogPanel = new GradientPanel();
+        dialogPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        scrollPaneInput = new JScrollPane(table);
+        dialogPanel.add(scrollPaneInput, BorderLayout.CENTER);
 
-        table.getColumnModel().getColumn(1).setCellEditor(new IntegerInputCellEditor(intFormatter));
-        table.getColumnModel().getColumn(2).setCellEditor(new IntegerInputCellEditor(intFormatter));
-        table.getColumnModel().getColumn(3).setCellEditor(new IntegerInputCellEditor(intFormatter));
-
-        // --- SHOW INPUT DIALOG ---
-        JDialog dialog = new JDialog();
-        dialog.setTitle("Input Data");
-        dialog.setModal(true);
-        dialog.setLayout(new BorderLayout());
-        dialog.add(new JScrollPane(table), BorderLayout.CENTER);
-
-        JButton submitButton = new JButton("Submit & Calculate");
-        JPanel btnPanel = new JPanel();
+        submitButton = new JButton("Submit and Calculate");
+        btnPanel = new JPanel();
+        btnPanel.setOpaque(false);
         btnPanel.add(submitButton);
-        dialog.add(btnPanel, BorderLayout.SOUTH);
-
+        
+        dialogPanel.add(btnPanel, BorderLayout.SOUTH);
+        inputDialog.setContentPane(dialogPanel);
+        
         submitButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (table.isEditing()) table.getCellEditor().stopCellEditing();
 
-                PPProcess[] processes = new PPProcess[n]; 
+                PPProcess[] processes = new PPProcess[num]; 
                 try {
-                    for (int i = 0; i < n; i++) {
-                        Object atObj = model.getValueAt(i, 1);
-                        Object btObj = model.getValueAt(i, 2);
-                        Object prObj = model.getValueAt(i, 3);
+                    for (int i = 0; i < num; i++) {
+                        Object atObj = tableModel.getValueAt(i, 1);
+                        Object btObj = tableModel.getValueAt(i, 2);
+                        Object prioObj = tableModel.getValueAt(i, 3);
 
-                        if (atObj == null || btObj == null || prObj == null) throw new NullPointerException();
+                        if (atObj == null || btObj == null || prioObj == null) throw new NullPointerException();
 
                         int at = Integer.parseInt(atObj.toString());
                         int bt = Integer.parseInt(btObj.toString());
-                        int pr = Integer.parseInt(prObj.toString());
+                        int pr = Integer.parseInt(prioObj.toString());
 
                         processes[i] = new PPProcess(i + 1, at, bt, pr);
                     }
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(dialog, "Please fill all fields with valid numbers.", "Error", JOptionPane.ERROR_MESSAGE);
+                } catch (Exception err) {
+                    JOptionPane.showMessageDialog(inputDialog, "Please fill all fields with valid numbers.", "Error", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
 
-                // A. RUN ALGORITHM (Using PPGanttChart)
-                List<PPGanttChart> history = runAlgorithmLogic(processes);
-
-                // B. SORT PROCESSES BY PID FOR DISPLAY
-                Arrays.sort(processes, Comparator.comparingInt(p -> p.pid));
-
-                // C. SHOW THE NEW DASHBOARD WINDOW
-                showDashboardWindow(history, processes);
-                
-                dialog.dispose();
+                PPGanttChart[] ganttChart = runPPAlgo(processes);
+                showResult(ganttChart, processes);         
+                inputDialog.dispose();
             }
         });
-
-        dialog.setSize(500, 400);
-        dialog.setLocationRelativeTo(null);
-        dialog.setVisible(true);
+        
+        inputDialog.setSize(500, 400);
+        inputDialog.setLocationRelativeTo(null);
+        inputDialog.setVisible(true);
     }
 
-    // --- LOGIC ---
-    // UPDATE: List<GanttRecord> -> List<PPGanttChart>
-    private List<PPGanttChart> runAlgorithmLogic(PPProcess[] processes) {
-        List<PPGanttChart> history = new ArrayList<>();
-        int n = processes.length;
-        int currentTime = 0;
-        int completed = 0;
+    private PPGanttChart[] runPPAlgo(PPProcess[] processes) {
+        PPGanttChart[] ganttChart = new PPGanttChart[1000]; 
+        int ganttIndex = 0; 
+
+        int total = processes.length;
+        int currTime = 0;
+        int completedProcess = 0;
         int currentPid = -1;
         int startBlock = 0;
 
-        while (completed < n) {
-            PPProcess best = null;
+        while (completedProcess < total) {
+            PPProcess bestProcess = null;
             for (PPProcess p : processes) {
-                if (p.arrivalTime <= currentTime && !p.isComplete) {
-                    if (best == null) best = p;
-                    else if (p.priority < best.priority) best = p;
-                    else if (p.priority == best.priority && p.arrivalTime < best.arrivalTime) best = p;
+                if (p.arrivalTime <= currTime && !p.isComplete) {
+                    if (bestProcess == null) bestProcess = p;
+                    else if (p.priority < bestProcess.priority) 
+                        bestProcess = p;
+                    else if (p.priority == bestProcess.priority && p.arrivalTime < bestProcess.arrivalTime) 
+                        bestProcess = p;
+                    else if (p.priority == bestProcess.priority && p.arrivalTime == bestProcess.arrivalTime && p.remainingBurstTime < bestProcess.remainingBurstTime) 
+                        bestProcess = p;
+                    else if (p.priority == bestProcess.priority && p.arrivalTime == bestProcess.arrivalTime && p.remainingBurstTime == bestProcess.remainingBurstTime && p.pid < bestProcess.pid) 
+                        bestProcess = p;
                 }
             }
 
-            int nextPid = (best != null) ? best.pid : -1;
-
+            int nextPid;
+            if (bestProcess != null) nextPid = bestProcess.pid;
+            else nextPid = -1;
+            
+            //if natapos or napalitan yung process, iadd ung current process sa gantt
             if (nextPid != currentPid) {
-                if (currentTime > 0) {
-                    // UPDATE: new GanttRecord -> new PPGanttChart
-                    history.add(new PPGanttChart(currentPid, startBlock, currentTime));
+                if (currTime > 0) {
+                    ganttChart[ganttIndex] = new PPGanttChart(currentPid, startBlock, currTime);
+                    ganttIndex++;
                 }
                 currentPid = nextPid;
-                startBlock = currentTime;
+                startBlock = currTime;
             }
 
-            if (best == null) {
-                currentTime++;
-            } else {
-                best.remainingBurstTime--;
-                currentTime++;
-                if (best.remainingBurstTime == 0) {
-                    best.isComplete = true;
-                    completed++;
-                    best.completedTime = currentTime;
-                    best.turnAroundTime = best.completedTime - best.arrivalTime;
-                    best.waitingTime = best.turnAroundTime - best.burstTime;
+            if (bestProcess == null) {
+                currTime++;
+            } 
+            else {
+                bestProcess.remainingBurstTime--;
+                currTime++;
+                if (bestProcess.remainingBurstTime == 0) {
+                    bestProcess.isComplete = true;
+                    completedProcess++;
+                    bestProcess.completedTime = currTime;
+                    bestProcess.turnAroundTime = bestProcess.completedTime - bestProcess.arrivalTime;
+                    bestProcess.waitingTime = bestProcess.turnAroundTime - bestProcess.burstTime;
                 }
             }
         }
-        // UPDATE: new GanttRecord -> new PPGanttChart
-        history.add(new PPGanttChart(currentPid, startBlock, currentTime));
-        return history;
+        //last process
+        ganttChart[ganttIndex] = new PPGanttChart(currentPid, startBlock, currTime);
+        return ganttChart;
     }
 
-    // =======================================================================
-    // === DASHBOARD WINDOW ===
-    // =======================================================================
-    // UPDATE: List<GanttRecord> -> List<PPGanttChart>
-    private void showDashboardWindow(List<PPGanttChart> history, PPProcess[] processes) {
-        JFrame frame = new JFrame("Calculation Results & Gantt Chart");
-        frame.setSize(900, 650); 
-        frame.setLocationRelativeTo(null);
-        frame.setAlwaysOnTop(true);
-        frame.setLayout(new BorderLayout());
+    private void showResult(PPGanttChart[] ganttChart, PPProcess[] processes) {
+        resultFrame = new JFrame("Calculation Results & Gantt Chart");
+        resultFrame.setSize(900, 650); 
+        resultFrame.setLocationRelativeTo(null);
+        resultFrame.setAlwaysOnTop(true);
+        resultFrame.setLayout(new BorderLayout());
 
-        // --- 1. TOP: RESULT TABLE ---
-        String[] columnNames = {"Process", "AT", "BT", "Priority", "CT", "Turnaround", "Waiting"};
-        Object[][] data = new Object[processes.length][7];
+        String[] header = {"Process", "AT", "BT", "Priority", "CT", "Turnaround", "Waiting"};
+        Object[][] tableCells = new Object[processes.length][7];
         
         double totalTAT = 0;
         double totalWT = 0;
 
         for (int i = 0; i < processes.length; i++) {
             PPProcess p = processes[i];
-            data[i][0] = "P" + p.pid;
-            data[i][1] = p.arrivalTime;
-            data[i][2] = p.burstTime;
-            data[i][3] = p.priority;
-            data[i][4] = p.completedTime;
-            data[i][5] = p.turnAroundTime;
-            data[i][6] = p.waitingTime;
+            tableCells[i][0] = "P" + p.pid;
+            tableCells[i][1] = p.arrivalTime;
+            tableCells[i][2] = p.burstTime;
+            tableCells[i][3] = p.priority;
+            tableCells[i][4] = p.completedTime;
+            tableCells[i][5] = p.turnAroundTime;
+            tableCells[i][6] = p.waitingTime;
             
             totalTAT += p.turnAroundTime;
             totalWT += p.waitingTime;
         }
 
-        DefaultTableModel tableModel = new DefaultTableModel(data, columnNames) {
+        resultTableModel = new DefaultTableModel(tableCells, header) {
             @Override
-            public boolean isCellEditable(int row, int col) { return false; } 
+            public boolean isCellEditable(int row, int col) { 
+                return false; 
+            } 
         };
         
-        JTable resultTable = new JTable(tableModel);
+        resultTable = new JTable(resultTableModel);
         resultTable.setRowHeight(25);
         resultTable.getTableHeader().setFont(new Font("SansSerif", Font.BOLD, 12));
-        JScrollPane tableScroll = new JScrollPane(resultTable);
+        
+        tableScroll = new JScrollPane(resultTable);
         tableScroll.setPreferredSize(new Dimension(800, 200));
         tableScroll.setBorder(BorderFactory.createTitledBorder("Final Process Table"));
 
-        // --- 2. CENTER: GANTT CHART ---
-        GanttChartPanel ganttPanel = new GanttChartPanel(history);
-        ganttPanel.setBorder(BorderFactory.createTitledBorder("Gantt Chart Visualization"));
+        ganttPanel = new PPGanttChartPanel(ganttChart);
+        ganttPanel.setBorder(BorderFactory.createTitledBorder("Gantt Chart"));
         
-        // --- 3. BOTTOM: AVERAGES & BACK BUTTON ---
-        JPanel footerPanel = new JPanel();
+        footerPanel = new JPanel();
         footerPanel.setLayout(new BoxLayout(footerPanel, BoxLayout.Y_AXIS)); 
         footerPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
         footerPanel.setBackground(new Color(240, 240, 240));
 
-        // Panel for the labels
-        JPanel labelsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 50, 10));
+        labelsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 50, 10));
         labelsPanel.setOpaque(false);
         
-        JLabel lblAvgTAT = new JLabel(String.format("Average Turnaround Time: %.2f ms", totalTAT / processes.length));
-        lblAvgTAT.setFont(new Font("SansSerif", Font.BOLD, 16));
-        lblAvgTAT.setForeground(new Color(0, 102, 204)); 
+        labelAvgTAT = new JLabel(String.format("Average Turnaround Time: %.2f ms", totalTAT / processes.length));
+        labelAvgTAT.setFont(new Font("SansSerif", Font.BOLD, 16));
+        labelAvgTAT.setForeground(new Color(0, 102, 204)); 
         
-        JLabel lblAvgWT = new JLabel(String.format("Average Waiting Time: %.2f ms", totalWT / processes.length));
-        lblAvgWT.setFont(new Font("SansSerif", Font.BOLD, 16));
-        lblAvgWT.setForeground(new Color(204, 51, 0)); 
+        labelAvgWT = new JLabel(String.format("Average Waiting Time: %.2f ms", totalWT / processes.length));
+        labelAvgWT.setFont(new Font("SansSerif", Font.BOLD, 16));
+        labelAvgWT.setForeground(new Color(204, 51, 0)); 
 
-        labelsPanel.add(lblAvgTAT);
-        labelsPanel.add(lblAvgWT);
+        labelsPanel.add(labelAvgTAT);
+        labelsPanel.add(labelAvgWT);
 
-        // The Back Button
-        JButton btnBack = new JButton("Back to Home");
+        btnBack = new JButton("Back to Home");
         btnBack.setFont(new Font("SansSerif", Font.BOLD, 14));
         btnBack.setAlignmentX(Component.CENTER_ALIGNMENT);
-        btnBack.addActionListener(e -> frame.dispose()); 
+        btnBack.addActionListener(e -> resultFrame.dispose()); 
 
-        // Add to footer
         footerPanel.add(labelsPanel);
         footerPanel.add(Box.createVerticalStrut(10));
         footerPanel.add(btnBack);
 
-        // Add to Frame
-        frame.add(tableScroll, BorderLayout.NORTH);
-        frame.add(ganttPanel, BorderLayout.CENTER);
-        frame.add(footerPanel, BorderLayout.SOUTH);
+        resultFrame.add(tableScroll, BorderLayout.NORTH);
+        resultFrame.add(ganttPanel, BorderLayout.CENTER);
+        resultFrame.add(footerPanel, BorderLayout.SOUTH);
 
-        frame.setVisible(true);
+        resultFrame.setVisible(true);
     }
+    private DefaultCellEditor createIntegerEditor(int minimumValue) {
+        NumberFormatter formatter = new NumberFormatter(NumberFormat.getIntegerInstance());
+        formatter.setValueClass(Integer.class);
+        formatter.setMinimum(minimumValue);
+        formatter.setAllowsInvalid(true);
+        formatter.setCommitsOnValidEdit(true);
+        ((NumberFormat) formatter.getFormat()).setGroupingUsed(false);
 
-    // --- GANTT CHART PANEL ---
-    class GanttChartPanel extends JPanel {
-        // UPDATE: List<GanttRecord> -> List<PPGanttChart>
-        List<PPGanttChart> history;
-        int totalTime;
+        JFormattedTextField ftf = new JFormattedTextField(formatter);
 
-        public GanttChartPanel(List<PPGanttChart> history) {
-            this.history = history;
-            this.totalTime = history.isEmpty() ? 1 : history.get(history.size() - 1).endTime;
-            this.setBackground(Color.WHITE);
-        }
+        ftf.setFocusLostBehavior(JFormattedTextField.PERSIST);
 
-        @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            Graphics2D g2 = (Graphics2D) g;
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-            int w = getWidth() - 60;
-            int h = 50;
-            int x = 30;
-            int y = getHeight() / 2 - 25; 
-
-            // UPDATE: Loop uses PPGanttChart
-            for (PPGanttChart r : history) {
-                int duration = r.endTime - r.startTime;
-                if (duration <= 0) continue;
-
-                int boxX = x + (int) ((double) r.startTime / totalTime * w);
-                int boxW = (int) ((double) duration / totalTime * w);
-                
-                if (r.pid == -1) g2.setColor(Color.LIGHT_GRAY);
-                else g2.setColor(Color.getHSBColor((r.pid * 0.618f) % 1, 0.6f, 0.9f)); 
-                
-                g2.fillRect(boxX, y, boxW, h);
-                g2.setColor(Color.BLACK);
-                g2.drawRect(boxX, y, boxW, h);
-                
-                String lbl = (r.pid == -1) ? "Idle" : "P" + r.pid;
-                if (boxW > 20) {
-                    g2.setColor(Color.BLACK);
-                    g2.drawString(lbl, boxX + boxW / 2 - 5, y + 30);
-                }
-                g2.drawString(String.valueOf(r.startTime), boxX, y + h + 15);
+        ftf.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override
+            public void focusGained(java.awt.event.FocusEvent e) {
+                SwingUtilities.invokeLater(() -> {
+                    int end = ftf.getText().length();
+                    ftf.setSelectionStart(end);
+                    ftf.setSelectionEnd(end);
+                });
             }
-            g2.drawString(String.valueOf(totalTime), x + w, y + h + 15);
-        }
+        });
+
+        return new DefaultCellEditor(ftf) {
+            @Override
+            public Component getTableCellEditorComponent(JTable tbl, Object value, boolean isSelected, int row, int col) {
+                ftf.setValue(null);
+                ftf.setText("");
+
+                if (value != null) {
+                    String s = value.toString().trim();
+                    if (!s.isEmpty()) {
+                        ftf.setValue(Integer.parseInt(s));
+                    } else {
+                        ftf.setValue(null);
+                        ftf.setText("");
+                    }
+                }
+
+                SwingUtilities.invokeLater(() -> {
+                    int end = ftf.getText().length();
+                    ftf.setSelectionStart(end);
+                    ftf.setSelectionEnd(end);
+                });
+
+                return super.getTableCellEditorComponent(tbl, value, isSelected, row, col);
+            }
+
+            @Override
+            public boolean stopCellEditing() {
+            	String text = ftf.getText().trim();
+                if (text.isEmpty()) {
+                    ftf.setValue(null);
+                    return super.stopCellEditing();
+                }
+
+                try {
+                    ftf.commitEdit();
+                } catch (Exception e) {
+                    return false;
+                }
+                return super.stopCellEditing();
+            }
+        };
     }
 
-    class IntegerInputCellEditor extends DefaultCellEditor {
-        JFormattedTextField ftf;
-        public IntegerInputCellEditor(NumberFormatter formatter) {
-            super(new JFormattedTextField(formatter));
-            ftf = (JFormattedTextField) getComponent();
-            ftf.addFocusListener(new FocusAdapter() {
-                public void focusGained(FocusEvent e) { SwingUtilities.invokeLater(() -> ftf.selectAll()); }
-            });
-        }
-        public Component getTableCellEditorComponent(JTable t, Object v, boolean s, int r, int c) {
-            JFormattedTextField f = (JFormattedTextField) super.getTableCellEditorComponent(t, v, s, r, c);
-            f.setValue(v);
-            return f;
-        }
-        public boolean stopCellEditing() {
-            try { ftf.commitEdit(); } catch (Exception e) { return false; }
-            return super.stopCellEditing();
-        }
-    }
 }
