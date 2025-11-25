@@ -176,10 +176,7 @@ public class MainGui {
         );
         
         if (choice == JOptionPane.YES_OPTION) {
-            alg.run(); 
-
-            card1.show(cardContainer, "RESULTS");
-         
+            alg.run();          
 
         } 
     }

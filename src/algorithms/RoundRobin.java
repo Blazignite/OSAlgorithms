@@ -103,7 +103,7 @@ public class RoundRobin implements OperatingSystemAlgorithm {
 
             processes.sort(Comparator.comparing(p -> Integer.parseInt(p.pid.substring(1))));
 
-            // Show results in **independent window**
+            // Show results
             showDashboardWindow(processes, ganttChart, tq);
 
         } catch (Exception e) {
@@ -112,7 +112,6 @@ public class RoundRobin implements OperatingSystemAlgorithm {
         }
     }
 
-    // Independent JFrame Window (like teammate's)
     private void showDashboardWindow(ArrayList<RRProcess> processes, ArrayList<RRGanttChart> ganttChart, int tq) {
 
         JFrame frame = new JFrame("Round Robin Results");
@@ -197,7 +196,6 @@ public class RoundRobin implements OperatingSystemAlgorithm {
         avg.setFont(new Font("SansSerif", Font.BOLD, 14));
         footer.add(avg);
 
-        // Add to panel
         mainPanel.add(scroll, BorderLayout.CENTER);
         mainPanel.add(ganttPanel, BorderLayout.SOUTH);
         mainPanel.add(footer, BorderLayout.NORTH);
